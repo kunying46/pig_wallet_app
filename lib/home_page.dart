@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
-//import 'package:intl/intl.dart'; // สำหรับ isSameDay
+import 'package:intl/intl.dart'; // สำหรับ isSameDay
 import 'graph_page.dart'; // นำเข้า graph_page.dart
 import 'summarize_page.dart';
 import 'budget_page.dart';
@@ -41,10 +41,10 @@ class _HomePageState extends State<HomePage> {
             // ปฏิทิน
             _buildCalendar(),
             const SizedBox(height: 20),
-            // กล่องแสดงINCOMEและEXPENSE
+            // กล่องแสดง INCOME และ EXPENSE
             _buildIncomeExpenseBox(),
             const SizedBox(height: 20),
-            // Dtailsรายการของวันที่เลือก
+            // รายการของวันที่เลือก
             _buildTransactionList(),
           ],
         ),
@@ -198,7 +198,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildTransactionList() {
     if (_selectedDate == null || !_transactions.containsKey(_selectedDate)) {
       return const Center(
-        child: Text('No Items To Day', style: TextStyle(fontSize: 18)),
+        child: Text('No Items Today', style: TextStyle(fontSize: 18)),
       );
     }
 
@@ -209,14 +209,51 @@ class _HomePageState extends State<HomePage> {
         itemCount: _transactions[selectedDate]!.length,
         itemBuilder: (context, index) {
           var transaction = _transactions[selectedDate]![index];
-          return ListTile(
-            title: Text(transaction['description']),
-            subtitle: Text(transaction['type'] == 'income' ? 'INCOME' : 'EXPENSE'),
-            trailing: Text(
-              '${transaction['amount']} ฿',
-              style: TextStyle(
+          return Container(
+            height: 100, // เพิ่มความสูงของ ListTile
+            margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 1,
+                  blurRadius: 3,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ListTile(
+              leading: Icon(
+                transaction['type'] == 'income' ? Icons.arrow_upward : Icons.arrow_downward,
                 color: transaction['type'] == 'income' ? Colors.green : Colors.red,
-                fontWeight: FontWeight.bold,
+                size: 30,
+              ),
+              title: Text(
+                transaction['description'],
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    transaction['type'] == 'income' ? 'INCOME' : 'EXPENSE',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                  Text(
+                    'Date: ${DateFormat('dd/MM/yyyy').format(selectedDate)}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  ),
+                ],
+              ),
+              trailing: Text(
+                '${transaction['amount']} ฿',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: transaction['type'] == 'income' ? Colors.green : Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           );
@@ -231,64 +268,68 @@ class _HomePageState extends State<HomePage> {
       builder: (context) {
         String description = '';
         double amount = 0;
-        String type = 'income';
+        String type = 'income'; // ค่าเริ่มต้น
 
-        return AlertDialog(
-          title: const Text('Add new item'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                decoration: const InputDecoration(labelText: 'Dtails'),
-                onChanged: (value) {
-                  description = value;
-                },
-              ),
-              TextField(
-                decoration: const InputDecoration(labelText: 'Amount'),
-                keyboardType: TextInputType.number,
-                onChanged: (value) {
-                  amount = double.tryParse(value) ?? 0;
-                },
-              ),
-              DropdownButton<String>(
-                value: type,
-                onChanged: (value) {
-                  setState(() {
-                    type = value!;
-                  });
-                },
-                items: const [
-                  DropdownMenuItem(value: 'income', child: Text('INCOME')),
-                  DropdownMenuItem(value: 'expense', child: Text('EXPENSE')),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Add new item'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    decoration: const InputDecoration(labelText: 'Details'),
+                    onChanged: (value) {
+                      description = value;
+                    },
+                  ),
+                  TextField(
+                    decoration: const InputDecoration(labelText: 'Amount'),
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) {
+                      amount = double.tryParse(value) ?? 0;
+                    },
+                  ),
+                  DropdownButton<String>(
+                    value: type,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        type = value!; // อัปเดตค่า type และ UI
+                      });
+                    },
+                    items: const [
+                      DropdownMenuItem(value: 'income', child: Text('INCOME')),
+                      DropdownMenuItem(value: 'expense', child: Text('EXPENSE')),
+                    ],
+                  ),
                 ],
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                if (_selectedDate != null) {
-                  setState(() {
-                    _transactions[_selectedDate!] ??= [];
-                    _transactions[_selectedDate!]!.add({
-                      'description': description,
-                      'amount': amount,
-                      'type': type,
-                    });
-                  });
-                }
-                Navigator.pop(context);
-              },
-              child: const Text('Confirm'),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    if (_selectedDate != null && description.isNotEmpty && amount > 0) {
+                      setState(() {
+                        _transactions[_selectedDate!] ??= [];
+                        _transactions[_selectedDate!]!.add({
+                          'description': description,
+                          'amount': amount,
+                          'type': type,
+                        });
+                      });
+                    }
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Confirm'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
