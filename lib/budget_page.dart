@@ -124,7 +124,7 @@ class _BudgetPageState extends State<BudgetPage> {
               child: Column(
                 children: [
                   Image.asset(
-                    'assets/mopuk.jpg', // เปลี่ยน path ตามที่คุณต้องการ
+                    'assets/mopuk.png', // เปลี่ยน path ตามที่คุณต้องการ
                     height: 100,
                     width: 100,
                   ),
